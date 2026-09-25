@@ -2,6 +2,7 @@ from pathlib import Path
 from rank_bm25 import BM25Okapi
 # First import the chunker you want from Chonkie
 from chonkie import RecursiveChunker, CodeChunker
+import re
 
 # Initialize the chunker
 # chunker = RecursiveChunker(
@@ -43,15 +44,19 @@ from chonkie import RecursiveChunker, CodeChunker
 # bm25の動作テストであり本番実装ではない
 # 事前に単語分割(トークン化)したリストのリストを渡す
 chunk_texts = [
-        "Thhe quick brown fox jumps over the lazy dog.",
+        "The quick brown fox jumps over the lazy dog.",
         "FOX! FOX! FOX! The Fox is very fast.",
-        "Artificial Intelligence and Machine Learning are changing the world."
+        "Artificial Intelligence and Machine Learning! are changing the world.",
+        "Hello world"
 ]
-tokenized_corpus = [text.split() for text in chunk_texts]  # 英語なら空白区切りでOK
+chunk_split = [text.lower().split() for text in chunk_texts]  # 英語なら空白区切りでOK
+tokenized_corpus = []
+for text in chunk_texts: 
+    tokenized_corpus.append(re.findall(r"[a-z0-9_]+", text.lower()))
 bm25 = BM25Okapi(tokenized_corpus)
 
 query = "DOG"
-tokenized_query = query.split()
+tokenized_query = query.lower().split()
 scores = bm25.get_scores(tokenized_query)  # 各チャンクとのスコア(numpy配列)
 
 top_k_indices = scores.argsort()[::-1][:10]  # 上位10件のインデックス
