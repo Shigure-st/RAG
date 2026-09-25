@@ -49,13 +49,15 @@ chunk_texts = [
         "Artificial Intelligence and Machine Learning! are changing the world.",
         "Hello world"
 ]
-chunk_split = [text.lower().split() for text in chunk_texts]  # 英語なら空白区切りでOK
-tokenized_corpus = []
-for text in chunk_texts: 
-    tokenized_corpus.append(re.findall(r"[a-z0-9_]+", text.lower()))
+# chunk_split = [text.lower().split() for text in chunk_texts]  # 英語なら空白区切りでOK
+
+tokenizer_pattern = re.compile(r"[a-z0-9_]+")
+def tokenize(text: str) -> list[str]:
+    return tokenizer_pattern.findall(text.lower())
+tokenized_corpus = [tokenize(text) for text in chunk_texts]
 bm25 = BM25Okapi(tokenized_corpus)
 
-query = "DOG"
+query = "machine learning"
 tokenized_query = query.lower().split()
 scores = bm25.get_scores(tokenized_query)  # 各チャンクとのスコア(numpy配列)
 
