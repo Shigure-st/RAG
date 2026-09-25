@@ -1,0 +1,10 @@
+[project]
+name = "rag"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "chonkie[code]>=1.7.0",
+    "rank-bm25>=0.2.2",
+]

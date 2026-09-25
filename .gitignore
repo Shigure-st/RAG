@@ -219,3 +219,7 @@ __marimo__/
 
 # subject pdf
 RAG.pdf
+
+# subject directory
+vllm-0.10.1
+
