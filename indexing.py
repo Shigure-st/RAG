@@ -3,11 +3,12 @@ from rank_bm25 import BM25Okapi
 # First import the chunker you want from Chonkie
 from chonkie import RecursiveChunker, CodeChunker
 import re
+from loading import get_file_path
 
-# Initialize the chunker
+# # Initialize the chunker
 # chunker = RecursiveChunker(
 #     tokenizer = "character",
-#     chunk_size = 20
+#     chunk_size = 200
 # )
 #
 # code_chunker = CodeChunker(
@@ -24,22 +25,27 @@ import re
 # with open("vllm-0.10.1/vllm/engine/protocol.py", encoding="utf-8") as f:
 #     text = f.read()
 # chunks_code = code_chunker(text)
-
-# Access chunks
+#
+# # Access chunks
 # for chunk in chunks:
 #     print(f"Chunk: {chunk.text}")
 #     print(f"Tokens: {chunk.token_count}")
+#     print(f"Start Index: {chunk.start_index}")
+#     print(f"End Index: {chunk.end_index}")
 #     print("================================================================")
-#
-#
+
+
 # for chunk in chunks_code:
 #     print(f"Chunk: {chunk.text}")
 #     print(f"Tokens: {chunk.token_count}")
 #     print("================================================================")
+#
+dir_path = Path("vllm-0.10.1")
+extension = {".py", ".md"}
 
-# dir = Path("vllm-0.10.1")
-# for file_name in dir.rglob("*.md"):
-#     print(file_name)
+for file_path in get_file_path(dir_path, extension):
+    print(file_path)
+
 
 # bm25の動作テストであり本番実装ではない
 # 事前に単語分割(トークン化)したリストのリストを渡す
