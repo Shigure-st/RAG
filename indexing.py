@@ -4,6 +4,7 @@ import re
 from loading import get_file_path
 from chonkie import RecursiveChunker, CodeChunker
 import json
+import bm25s
 
 
 text_chunker = RecursiveChunker(
@@ -50,25 +51,55 @@ for file_path in get_file_path(dir_path, extension):
 with open("data/processed/chunk_index", "w", encoding="utf-8") as f:
     json.dump(all_chunks, f, ensure_ascii=False, indent=2)
 
+
+with open("data/processed/chunk_index", "r", encoding="utf-8") as f:
+    corpus_data = json.load(f)
+corpus_texts = [data["text"] for data in corpus_data]
+corpus_tokens = bm25s.tokenize(corpus_texts)
+
+retriever = bm25s.BM25()
+retriever.index(corpus_tokens)
+retriever.save("data/processed/bm25_index")
+
+# with open("data/processed/chunks.json", encoding="utf-8") as f:
+#     chunks = json.load(f)  # chunk_id == リストのインデックス、という前提
+
+query_tokens = bm25s.tokenize("Hello World")
+results, scores = retriever.retrieve(query_tokens, k=10)
+chunk_ids = results[0]  # 1クエリ分の結果
+print(results)
+print(scores)
+print(chunk_ids)
+for cid in chunk_ids:
+    print(f"file_path: {corpus_data[cid]['file_path']}")
+    print(f"first_character_index: {corpus_data[cid]['first_character_index']}")
+    print(f"last_character_index: {corpus_data[cid]['last_character_index']}")
+    print(f"TEXT: {corpus_data[cid]['text']}")
+    print()
+    print()
+    print()
+
+
+
 # bm25の動作テストであり本番実装ではない
 # 事前に単語分割(トークン化)したリストのリストを渡す
-chunk_texts = [
-        "The quick brown fox jumps over the lazy dog.",
-        "FOX! FOX! FOX! The Fox is very fast.",
-        "Artificial Intelligence and Machine Learning! are changing the world.",
-        "Hello world"
-]
-# chunk_split = [text.lower().split() for text in chunk_texts]  # 英語なら空白区切りでOK
-
-tokenizer_pattern = re.compile(r"[a-z0-9_]+")
-def tokenize(text: str) -> list[str]:
-    return tokenizer_pattern.findall(text.lower())
-tokenized_corpus = [tokenize(text) for text in chunk_texts]
-bm25 = BM25Okapi(tokenized_corpus)
-
-query = "machine learning"
-tokenized_query = query.lower().split()
-scores = bm25.get_scores(tokenized_query)  # 各チャンクとのスコア(numpy配列)
-
-top_k_indices = scores.argsort()[::-1][:10]  # 上位10件のインデックス
-print(top_k_indices)
+# chunk_texts = [
+#         "The quick brown fox jumps over the lazy dog.",
+#         "FOX! FOX! FOX! The Fox is very fast.",
+#         "Artificial Intelligence and Machine Learning! are changing the world.",
+#         "Hello world"
+# ]
+# # chunk_split = [text.lower().split() for text in chunk_texts]  # 英語なら空白区切りでOK
+#
+# tokenizer_pattern = re.compile(r"[a-z0-9_]+")
+# def tokenize(text: str) -> list[str]:
+#     return tokenizer_pattern.findall(text.lower())
+# tokenized_corpus = [tokenize(text) for text in chunk_texts]
+# bm25 = BM25Okapi(tokenized_corpus)
+#
+# query = "machine learning"
+# tokenized_query = query.lower().split()
+# scores = bm25.get_scores(tokenized_query)  # 各チャンクとのスコア(numpy配列)
+#
+# top_k_indices = scores.argsort()[::-1][:10]  # 上位10件のインデックス
+# print(top_k_indices)
