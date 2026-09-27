@@ -1,51 +1,54 @@
 from pathlib import Path
 from rank_bm25 import BM25Okapi
-# First import the chunker you want from Chonkie
-from chonkie import RecursiveChunker, CodeChunker
 import re
 from loading import get_file_path
-
-# # Initialize the chunker
-# chunker = RecursiveChunker(
-#     tokenizer = "character",
-#     chunk_size = 200
-# )
-#
-# code_chunker = CodeChunker(
-#     language="python",      # Specify the programming language
-#     tokenizer="character",  # Default tokenizer (or use "gpt2", etc.)
-#     chunk_size=300,        # Maximum tokens per chunk
-#     include_nodes=False     # Optionally include AST nodes in output
-# )
-# # Chunk some text
-# with open("vllm-0.10.1/README.md", encoding="utf-8") as f:
-#     text = f.read()
-# chunks = chunker(text)
-#
-# with open("vllm-0.10.1/vllm/engine/protocol.py", encoding="utf-8") as f:
-#     text = f.read()
-# chunks_code = code_chunker(text)
-#
-# # Access chunks
-# for chunk in chunks:
-#     print(f"Chunk: {chunk.text}")
-#     print(f"Tokens: {chunk.token_count}")
-#     print(f"Start Index: {chunk.start_index}")
-#     print(f"End Index: {chunk.end_index}")
-#     print("================================================================")
+from chonkie import RecursiveChunker, CodeChunker
+import json
 
 
-# for chunk in chunks_code:
-#     print(f"Chunk: {chunk.text}")
-#     print(f"Tokens: {chunk.token_count}")
-#     print("================================================================")
-#
+text_chunker = RecursiveChunker(
+    tokenizer = "character",
+    chunk_size = 1000
+)
+
+code_chunker = CodeChunker(
+    language="python",      # Specify the programming language
+    tokenizer="character",  # Default tokenizer (or use "gpt2", etc.)
+    chunk_size=1000,        # Maximum tokens per chunk
+    include_nodes=False     # Optionally include AST nodes in output
+)
+
 dir_path = Path("vllm-0.10.1")
 extension = {".py", ".md"}
+chunk_id = 0
+all_chunks = []
 
 for file_path in get_file_path(dir_path, extension):
-    print(file_path)
+    with open(file_path, encoding="utf-8") as f:
+        text = f.read()
+    if file_path.suffix == ".py":
+        chunks = code_chunker(text)
+    else:
+        chunks = text_chunker(text)
+    for chunk in chunks:
+        # print("================================================================")
+        # print(f"Chunk: {chunk.text}")
+        # print(f"Tokens: {chunk.token_count}")
+        # print(f"Start Index: {chunk.start_index}")
+        # print(f"End Index: {chunk.end_index}")
+        # print("================================================================")
+        chunk_data = {
+            "chunk_id": chunk_id,
+            "file_path": str(file_path),
+            "first_character_index": chunk.start_index,
+            "last_character_index": chunk.end_index,
+            "text": chunk.text
+        }
+        all_chunks.append(chunk_data)
+        chunk_id += 1
 
+with open("data/processed/chunk_index", "w", encoding="utf-8") as f:
+    json.dump(all_chunks, f, ensure_ascii=False, indent=2)
 
 # bm25の動作テストであり本番実装ではない
 # 事前に単語分割(トークン化)したリストのリストを渡す
