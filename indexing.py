@@ -67,7 +67,7 @@ code_chunker = CodeChunker(
 )
 
 embedding_model = TextEmbedding(
-    model_name = "sentence-transformers/all-MiniLM-L6-v2",
+    model_name = "minishlab/potion-base-8M",
     threads=6
 )
 dir_path = Path("vllm-0.10.1")
@@ -83,18 +83,9 @@ for file_path in get_file_path(dir_path, extension):
         chunks = code_chunker(text)
     else:
         chunks = text_chunker(text)
-    # print(f"chunks: {chunks}")
-
     current_start = None
     current_end = None
     for chunk in chunks:
-        # print("================================================================")
-        # print(f"Chunk: {chunk.text}")
-        # print(f"Tokens: {chunk.token_count}")
-        # print(f"Start Index: {chunk.start_index}")
-        # print(f"End Index: {chunk.end_index}")
-        # print("================================================================")
-
         if current_start is None:
             current_start = chunk.start_index
             current_end = chunk.end_index
@@ -120,21 +111,7 @@ for file_path in get_file_path(dir_path, extension):
 
             current_start = chunk.start_index
             current_end = chunk.end_index
-            if len(merged_text) > 2000:
-                print(f"Len:{merged_text}")
 
-        # chunk_data = {
-        #     "chunk_id": chunk_id,
-        #     "file_path": str(file_path),
-        #     "first_character_index": chunk.start_index,
-        #     "last_character_index": chunk.end_index,
-        #     "text": chunk.text
-        # }
-        # all_chunk_text.append(chunk.text)
-        # all_chunks.append(chunk_data)
-        # chunk_id += 1
-        # if len(chunk.text) > 1900:
-        #     print(f"Len:{chunk.text}")
     if current_start is not None:
         merged_text = text[current_start:current_end]
         chunk_data = {
@@ -149,36 +126,37 @@ for file_path in get_file_path(dir_path, extension):
         chunk_id += 1
 
 embeddings_generator = embedding_model.embed(all_chunk_text)
-# vector_text = np.array(list(embeddings_generator)[0])
 vector_text = np.array(list(tqdm(embeddings_generator, total=chunk_id, desc="ベクトル変換中")))
-# print(vector_text[0])
+np.save("data/processed/potion-8m_index.npy", vector_text)
 
-os._exit(0)
-
+corpus_tokens = bm25s.tokenize(all_chunk_text)
+retriever = bm25s.BM25()
+retriever.index(corpus_tokens)
+retriever.save("data/processed/bm25_index")
 
 
 with open("data/processed/chunk_index", "w", encoding="utf-8") as f:
     json.dump(all_chunks, f, ensure_ascii=False, indent=2)
 
 
-with open("data/processed/chunk_index", "r", encoding="utf-8") as f:
-    corpus_data = json.load(f)
-corpus_texts = [data["text"] for data in corpus_data]
-corpus_tokens = bm25s.tokenize(corpus_texts)
-
-retriever = bm25s.BM25()
-retriever.index(corpus_tokens)
-retriever.save("data/processed/bm25_index")
+# with open("data/processed/chunk_index", "r", encoding="utf-8") as f:
+#     corpus_data = json.load(f)
+# corpus_texts = [data["text"] for data in corpus_data]
+# corpus_tokens = bm25s.tokenize(corpus_texts)
+#
+# retriever = bm25s.BM25()
+# retriever.index(corpus_tokens)
+# retriever.save("data/processed/bm25_index")
 
 # with open("data/processed/chunks.json", encoding="utf-8") as f:
 #     chunks = json.load(f)  # chunk_id == リストのインデックス、という前提
-
-query_tokens = bm25s.tokenize("Hello World")
-results, scores = retriever.retrieve(query_tokens, k=10)
-chunk_ids = results[0]  # 1クエリ分の結果
-print(results)
-print(scores)
-print(chunk_ids)
+#
+# query_tokens = bm25s.tokenize("Hello World")
+# results, scores = retriever.retrieve(query_tokens, k=10)
+# chunk_ids = results[0]  # 1クエリ分の結果
+# print(results)
+# print(scores)
+# print(chunk_ids)
 # for cid in chunk_ids:
 #     print(f"file_path: {corpus_data[cid]['file_path']}")
 #     print(f"first_character_index: {corpus_data[cid]['first_character_index']}")
