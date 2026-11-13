@@ -76,7 +76,7 @@ chunk_id = 0
 all_chunk_text = []
 all_chunks = []
 
-for file_path in get_file_path(dir_path, extension):
+for file_path in tqdm(get_file_path(dir_path, extension), desc="chunk分割中"):
     with open(file_path, encoding="utf-8") as f:
         text = f.read()
     if file_path.suffix == ".py":
@@ -126,7 +126,10 @@ for file_path in get_file_path(dir_path, extension):
         chunk_id += 1
 
 embeddings_generator = embedding_model.embed(all_chunk_text)
-vector_text = np.array(list(tqdm(embeddings_generator, total=chunk_id, desc="ベクトル変換中")))
+vector_text = np.array(list(tqdm(
+                embeddings_generator,
+                total=chunk_id,
+                desc="ベクトル変換中")))
 np.save("data/processed/potion-8m_index.npy", vector_text)
 
 corpus_tokens = bm25s.tokenize(all_chunk_text)

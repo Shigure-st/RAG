@@ -8,5 +8,6 @@ dependencies = [
     "bm25s>=0.3.11",
     "chonkie[code]>=1.7.0",
     "fastembed>=0.8.1",
+    "fire>=0.7.1",
     "rank-bm25>=0.2.2",
 ]
