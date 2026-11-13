@@ -1,4 +1,5 @@
 import fire
+from src.indexing import run_indexing
 
 class RAGCLI:
     """RAG System Command Line Interface"""
@@ -7,10 +8,9 @@ class RAGCLI:
         """
         Ingest data/raw/ and build the index under data/processed/.
         """
-        print("[CLI TEST] index コマンドが呼ばれました。")
-        print(f"[CLI TEST] max_chunk_size = {max_chunk_size} (型: {type(max_chunk_size).__name__})")
+        run_indexing(max_chunk_size=int(max_chunk_size))
 
-    def serach(self, query: str, k: int = 5) -> None:
+    def search(self, query: str, k: int = 5) -> None:
         """
         Return the top-k sources for a single query.
         """
