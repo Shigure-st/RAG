@@ -75,6 +75,8 @@ def run_indexing(max_chunk_size: int = 2000):
                 current_end = chunk.end_index
 
         if current_start is not None:
+            if current_end - current_start > max_chunk_size:
+                current_end = current_start + max_chunk_size
             merged_text = text[current_start:current_end]
             chunk_data = {
                 "chunk_id": chunk_id,
