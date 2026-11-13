@@ -38,25 +38,46 @@ def run_indexing(max_chunk_size: int = 2000):
     all_chunk_text = []
     all_chunks = []
 
-    for file_path in tqdm(get_file_path(dir_path, extension), desc="chunk分割中"):
-        with open(file_path, encoding="utf-8") as f:
-            text = f.read()
-        if file_path.suffix == ".py":
-            chunks = code_chunker(text)
-        else:
-            chunks = text_chunker(text)
-        current_start = None
-        current_end = None
-        for chunk in chunks:
-            if current_start is None:
-                current_start = chunk.start_index
-                current_end = chunk.end_index
-                continue
-
-            potential_size = chunk.end_index - current_start
-            if potential_size <= max_chunk_size / 2:
-                current_end = chunk.end_index
+    file_list = list(get_file_path(dir_path, extension))
+    with tqdm(file_list, desc="Chunking", unit="file") as pbar:
+        for file_path in pbar:
+            with open(file_path, encoding="utf-8") as f:
+                text = f.read()
+            if file_path.suffix == ".py":
+                chunks = code_chunker(text)
             else:
+                chunks = text_chunker(text)
+            current_start = None
+            current_end = None
+            for chunk in chunks:
+                if current_start is None:
+                    current_start = chunk.start_index
+                    current_end = chunk.end_index
+                    continue
+
+                potential_size = chunk.end_index - current_start
+                if potential_size <= max_chunk_size / 2:
+                    current_end = chunk.end_index
+                else:
+                    if current_end - current_start > max_chunk_size:
+                        current_end = current_start + max_chunk_size
+                    merged_text = text[current_start:current_end]
+                    chunk_data = {
+                        "chunk_id": chunk_id,
+                        "file_path": str(file_path),
+                        "first_character_index": current_start,
+                        "last_character_index": current_end,
+                        "text": merged_text
+                    }
+                    all_chunk_text.append(merged_text)
+                    all_chunks.append(chunk_data)
+                    chunk_id += 1
+
+                    current_start = chunk.start_index
+                    current_end = chunk.end_index
+                    pbar.set_postfix(chunks=len(all_chunks))
+
+            if current_start is not None:
                 if current_end - current_start > max_chunk_size:
                     current_end = current_start + max_chunk_size
                 merged_text = text[current_start:current_end]
@@ -70,24 +91,7 @@ def run_indexing(max_chunk_size: int = 2000):
                 all_chunk_text.append(merged_text)
                 all_chunks.append(chunk_data)
                 chunk_id += 1
-
-                current_start = chunk.start_index
-                current_end = chunk.end_index
-
-        if current_start is not None:
-            if current_end - current_start > max_chunk_size:
-                current_end = current_start + max_chunk_size
-            merged_text = text[current_start:current_end]
-            chunk_data = {
-                "chunk_id": chunk_id,
-                "file_path": str(file_path),
-                "first_character_index": current_start,
-                "last_character_index": current_end,
-                "text": merged_text
-            }
-            all_chunk_text.append(merged_text)
-            all_chunks.append(chunk_data)
-            chunk_id += 1
+                pbar.set_postfix(chunks=len(all_chunks))
 
     embeddings_generator = embedding_model.embed(all_chunk_text)
     vector_text = np.array(list(tqdm(
