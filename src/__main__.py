@@ -1,5 +1,7 @@
 import fire
 from src.indexing import run_indexing
+from src.retriever import run_retriever
+
 
 class RAGCLI:
     """RAG System Command Line Interface"""
@@ -16,9 +18,12 @@ class RAGCLI:
         """
         print("[CLI TEST] index コマンドが呼ばれました。")
         print(f"[CLI TEST] query = {query} k = {k}")
+        run_retriever(query, k=int(k))
+
 
 def main() -> None:
     fire.Fire(RAGCLI)
+
 
 if __name__ == "__main__":
     main()

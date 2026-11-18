@@ -1,23 +1,18 @@
 from pathlib import Path
 from rank_bm25 import BM25Okapi
-import re
 from src.loading import get_file_path
 from chonkie import RecursiveChunker, CodeChunker
-import json
 import bm25s
-from typing import List
 import numpy as np
 from fastembed import TextEmbedding
-import sys
-import os
 from tqdm import tqdm
-
+import json
 
 
 def run_indexing(max_chunk_size: int = 2000):
     text_chunker = RecursiveChunker(
-        tokenizer = "character",
-        chunk_size = max_chunk_size
+        tokenizer="character",
+        chunk_size=max_chunk_size
     )
 
     code_chunker = CodeChunker(
@@ -28,7 +23,7 @@ def run_indexing(max_chunk_size: int = 2000):
     )
 
     embedding_model = TextEmbedding(
-        model_name = "minishlab/potion-base-8M",
+        model_name="minishlab/potion-base-8M",
         threads=6
     )
 
@@ -106,9 +101,9 @@ def run_indexing(max_chunk_size: int = 2000):
     retriever.save("data/processed/bm25_index")
 
 
-    # with open("data/processed/chunk_index", "w", encoding="utf-8") as f:
-    #     json.dump(all_chunks, f, ensure_ascii=False, indent=2)
-    #
+    with open("data/processed/chunk_index", "w", encoding="utf-8") as f:
+        json.dump(all_chunks, f, ensure_ascii=False, indent=2)
+
 
 # with open("data/processed/chunk_index", "r", encoding="utf-8") as f:
 #     corpus_data = json.load(f)
